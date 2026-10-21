@@ -6,6 +6,8 @@
 <meta name="description" content="Rúbrica ponderable con los tres saberes para evaluar evidencias elaboradas con apoyo de IA generativa en las licenciaturas en educación del Plan 2022.">
 <style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Rúbrica de uso ético de IA</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Source+Sans+3:wght@400;600;700&display=swap">
 <style>
 /* Layout: encabezado del caso, rúbrica por saberes (criterio · peso · tres niveles), panel de resultado fijo a la derecha */
@@ -272,7 +274,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
           <button class="act" id="resetw" type="button">Pesos del tipo de actividad</button>
         </div>
         <div class="btns">
-          <button class="act primary" id="dlhtml" type="button" disabled>Descargar informe</button>
+          <button class="act primary" id="dlhtml" type="button" disabled>Descargar informe (PDF)</button>
           <button class="act" id="dlcsv" type="button" disabled>Descargar datos (CSV)</button>
         </div>
         <p class="status" id="dlstatus" aria-live="polite"></p>
@@ -526,9 +528,93 @@ function reportCSV(){
   const lines=CRIT.map((c,k)=>{const lv=levels[k];return [c.s.name,c.id+". "+c.t,c.tags.join(" "),weights[k],T.w[k],lv?LEV[lv]:"",lv||"",lv?c.d[3-lv]:"",lv?(weights[k]*lv/3).toFixed(1):""]});
   return "﻿"+[...head,cols,...lines].map(r=>r.map(q).join(",")).join("\r\n");
 }
+/* ---------- Informe PDF (jsPDF + AutoTable) ---------- */
+function buildPDF(D){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:"pt",format:"letter"});
+  const T=s=>String(s==null?"":s).replace(/☑/g,"[x]").replace(/☐/g,"[ ]").replace(/→/g,"->").replace(/≥/g,">=").replace(/[^\x00-\xFF–—‘’“”…€]/g,"");
+  const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=42,CW=W-2*M;
+  const INK=[24,35,46],MUT=[91,104,117],ACC=[21,90,122];
+  let y=M;
+  const need=h=>{if(y+h>H-M-14){doc.addPage();y=M}};
+  const para=(txt,opt={})=>{const size=opt.size||9.5;doc.setFont("helvetica",opt.bold?"bold":"normal");doc.setFontSize(size);doc.setTextColor(...(opt.color||INK));
+    const lines=doc.splitTextToSize(T(txt),opt.w||CW);const lh=size*1.32;need(lines.length*lh);doc.text(lines,opt.x||M,y+size);y+=lines.length*lh+(opt.after==null?4:opt.after)};
+  const h2=txt=>{y+=8;need(30);para(txt,{size:12,bold:true,color:ACC,after:4})};
+
+  // Encabezado
+  doc.setFillColor(...ACC);doc.rect(0,0,W,6,"F");
+  para(D.title,{size:16,bold:true,after:6});
+  D.meta.forEach(([k,v])=>{doc.setFontSize(9.5);doc.setFont("helvetica","bold");doc.setTextColor(...MUT);need(14);doc.text(T(k)+":",M,y+9.5);
+    const kw=doc.getTextWidth(T(k)+": ");para(v||"—",{x:M+kw,w:CW-kw,after:1})});
+  y+=8;
+
+  // Resumen
+  const bw=(CW-3*8)/4,bh=46;need(bh+6);
+  D.summary.forEach(([k,v],i)=>{const x=M+i*(bw+8);doc.setDrawColor(217,223,229);doc.setLineWidth(.8);doc.roundedRect(x,y,bw,bh,5,5,"S");
+    doc.setFillColor(...(D.color||ACC));doc.rect(x,y,bw,4,"F");
+    doc.setFont("helvetica","bold");doc.setFontSize(7.5);doc.setTextColor(...MUT);doc.text(T(k).toUpperCase(),x+8,y+17);
+    doc.setFontSize(12.5);doc.setTextColor(...INK);doc.text(doc.splitTextToSize(T(v),bw-14)[0],x+8,y+35)});
+  y+=bh+10;
+
+  // Logro por saber
+  if(D.bars&&D.bars.length){need(16*D.bars.length+4);
+    D.bars.forEach(b=>{doc.setFont("helvetica","bold");doc.setFontSize(9);doc.setTextColor(...b.c);doc.text(T(b.name),M,y+9);
+      doc.setFillColor(234,238,242);doc.rect(M+120,y+3,CW-220,7,"F");doc.setFillColor(...b.c);doc.rect(M+120,y+3,(CW-220)*b.p/100,7,"F");
+      doc.setFont("helvetica","normal");doc.setTextColor(...INK);doc.text(T(b.label),M+CW-92,y+9);y+=16});y+=4}
+
+  // Alerta
+  if(D.alert){doc.setFont("helvetica","bold");doc.setFontSize(9.5);const lines=doc.splitTextToSize(T(D.alert),CW-20);const hh=lines.length*12.5+12;need(hh+6);
+    doc.setFillColor(247,224,221);doc.roundedRect(M,y,CW,hh,5,5,"F");doc.setTextColor(168,50,44);doc.text(lines,M+10,y+16);y+=hh+8}
+
+  // Evidencias de interacción
+  h2("Evidencias de la interacción con la IA");
+  D.evid.forEach(([k,ok])=>para((ok?"[x] ":"[  ] ")+k,{after:1}));
+  if(D.evloc)para("Ubicación: "+D.evloc,{color:MUT,size:9});
+  if(D.retro){h2("Retroalimentación");para(D.retro)}
+
+  // Rúbrica
+  h2("Rúbrica");
+  const body=[];
+  D.sabers.forEach(s=>{body.push([{content:T(s.title),colSpan:5,styles:{fillColor:s.soft,textColor:s.c,fontStyle:"bold"}}]);
+    s.rows.forEach(r=>body.push(r.map(T)))});
+  doc.autoTable({startY:y,margin:{left:M,right:M,bottom:M+14},rowPageBreak:"avoid",head:[["Criterio","Peso","Nivel","Descriptor alcanzado","Puntos"]],body,
+    styles:{font:"helvetica",fontSize:8.5,cellPadding:4,textColor:INK,lineColor:[227,231,235],lineWidth:.5,valign:"top"},
+    headStyles:{fillColor:[234,238,242],textColor:MUT,fontStyle:"bold",fontSize:7.5},
+    columnStyles:{0:{cellWidth:150},1:{cellWidth:48,halign:"center"},2:{cellWidth:70,halign:"center",fontStyle:"bold"},4:{cellWidth:42,halign:"center"}}});
+  y=doc.lastAutoTable.finalY+10;
+  para(D.scale,{size:8.5,color:MUT});
+  D.foot.forEach(f=>{y+=2;para(f,{size:8,color:MUT})});
+
+  // Pie de página
+  const n=doc.getNumberOfPages();
+  for(let i=1;i<=n;i++){doc.setPage(i);doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(...MUT);
+    doc.text(T(D.footer),M,H-22);doc.text(`Página ${i} de ${n}`,W-M,H-22,{align:"right"})}
+  return doc;
+}
+
+function pdfData(){
+  const {score,total,sub,L,ev}=compute();const T=TIPOS.find(t=>t.id===tipo);const E=ETAPAS.find(e=>e[0]===val("etapa"));
+  const RGB={s1:[[21,90,122],[220,235,242]],s2:[[180,85,42],[248,228,216]],s3:[[47,125,79],[221,239,227]]};
+  const lvColor=!ev?[21,90,122]:score>=90?[47,125,79]:score>=75?[21,90,122]:score>=60?[138,106,18]:[168,50,44];
+  return {title:"Rúbrica para evidencias elaboradas con apoyo de IA generativa",color:lvColor,
+    meta:[["Estudiante",val("est")],["Licenciatura",val("lic")],["Actividad",val("act")],["Tipo de actividad",T.n],["Uso de IA permitido",E[1]+": "+E[2]],["Herramientas declaradas",val("herr")],["Docente",val("doc")],["Fecha",today()]],
+    summary:[["Resultado",ev?score+" / 100":"—"],["Nivel",ev?L[1]:"Sin evaluar"],["Escala 0–10",ev?(score/10).toFixed(1):"—"],["Criterios evaluados",ev+" de "+CRIT.length]],
+    bars:SABERES.map(s=>{const d=sub[s.id];const p=d.den?Math.round(d.num/d.den*100):0;return {name:s.name,c:RGB[s.c][0],p,label:d.den?p+" % de logro":"sin evaluar"}}),
+    alert:$("alert").hidden?"":$("alert").textContent,
+    evid:EVS.map(e=>[e[1],$(e[0]).checked]),evloc:val("evlink"),retro:val("retro"),
+    sabers:SABERES.map(s=>{const d=sub[s.id];return {title:`${s.name} · ${s.sub} — peso ${d.w} % · ${d.den?Math.round(d.num/d.den*100)+" % de logro":"sin evaluar"}`,c:RGB[s.c][0],soft:RGB[s.c][1],
+      rows:s.crit.map(c=>{const k=CRIT.findIndex(x=>x.id===c.id);const lv=levels[k];
+        return [`${c.id}. ${c.t}\nPrincipios: ${c.tags.join(", ")}`,weights[k]+" %"+(weights[k]!==T.w[k]?`\nsug. ${T.w[k]}`:""),lv?LEV[lv]:"—",lv?c.d[3-lv]:"No evaluado",lv?(weights[k]*lv/3).toFixed(1):""]})}}),
+    scale:`Suma de pesos: ${total} %. Resultado = suma de (peso × nivel ÷ 3), ajustado a los criterios evaluados. Escala: 90–100 sobresaliente · 75–89 satisfactorio · 60–74 suficiente · 0–59 requiere acompañamiento.`,
+    foot:["Fundamento: Manifiesto sobre el uso de la IAGen en la comunidad normalista y los CAM de Veracruz (DEN-SEV, documento de trabajo); Guía rápida de uso ético y crítico de la IA (Licenciatura en Educación Preescolar, Plan 2022), generalizada para todas las licenciaturas; Planes de estudio 2022 (SEP), https://dgesum.sep.gob.mx/planes2022.",
+      "Declaración de uso de IA del instrumento: criterios, descriptores, pesos y página elaborados con apoyo de Claude (Anthropic, Claude Opus 5.5, octubre de 2026), bajo la dirección y revisión de Nancy Pérez-Castro (IIIA, Universidad Veracruzana). Propuesta inicial sujeta a validación colegiada.",
+      "Siglas: IA, inteligencia artificial · IAGen, inteligencia artificial generativa · DEN, Dirección de Educación Normal · SEV, Secretaría de Educación de Veracruz · CAM, Centros de Actualización del Magisterio · I–XV, principios de la Parte I del Manifiesto · P2-n, orientación n de la Parte II · PDA, Procesos de Desarrollo de Aprendizaje · NEAE, Necesidades Específicas de Apoyo Educativo · CLEAR, Conciso, Lógico, Explícito, Adaptativo, Reflexivo · IIIA, Instituto de Investigaciones en Inteligencia Artificial."],
+    footer:"Rúbrica de uso ético de IA · "+(val("est")||"Evaluación")+" · "+today()};
+}
 const st=$("dlstatus"),bH=$("dlhtml"),bC=$("dlcsv");
 function browserSave(filename,data){
-  const url=URL.createObjectURL(new Blob([data],{type:filename.endsWith(".csv")?"text/csv;charset=utf-8":"text/html;charset=utf-8"}));
+  const type=filename.endsWith(".csv")?"text/csv;charset=utf-8":filename.endsWith(".pdf")?"application/pdf":"text/html;charset=utf-8";
+  const url=URL.createObjectURL(new Blob([data],{type}));
   const a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),2000);st.textContent="Archivo descargado.";
 }
@@ -543,7 +629,13 @@ async function capSave(dl,filename,data){
   const saveF=dl?(f,d)=>capSave(dl,f,d):browserSave;
   bH.disabled=false;bC.disabled=false;
   const base=()=>"rubrica-IA_"+slug(val("est"))+"_"+new Date().toISOString().slice(0,10);
-  bH.onclick=()=>saveF(base()+".html",reportHTML());
+  bH.onclick=()=>{
+    if(window.jspdf&&window.jspdf.jsPDF){
+      try{const doc=buildPDF(pdfData());saveF(base()+".pdf",doc.output("arraybuffer"));return}
+      catch(e){st.textContent="No se pudo generar el PDF; se descarga el informe en HTML."}
+    }else st.textContent="No se pudo cargar el generador de PDF; se descarga el informe en HTML.";
+    setTimeout(()=>saveF(base()+".html",reportHTML()),600);
+  };
   bC.onclick=()=>saveF(base()+".csv",reportCSV());
 })();
 </script>
