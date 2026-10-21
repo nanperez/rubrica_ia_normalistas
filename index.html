@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Rúbrica ponderable con los tres saberes para evaluar evidencias elaboradas con apoyo de IA generativa en las licenciaturas en educación del Plan 2022.">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Rúbrica de uso ético de IA</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: encabezado del caso, rúbrica por saberes (criterio · peso · tres niveles), panel de resultado fijo a la derecha */
+:root{
+  --bg:#f3f5f7; --paper:#ffffff; --ink:#18232e; --muted:#5b6875; --line:#d9dfe5; --soft:#eaeef2;
+  --accent:#155a7a; --accent-soft:#dcebf2;
+  --s1:#155a7a; --s1-soft:#dcebf2;   /* Saber */
+  --s2:#b4552a; --s2-soft:#f8e4d8;   /* Saber hacer */
+  --s3:#2f7d4f; --s3-soft:#ddefe3;   /* Saber ser */
+  --pick:#155a7a; --warn:#a8322c; --warn-soft:#f7e0dd; --ok:#2f7d4f;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11171d; --paper:#18212a; --ink:#e6ecf1; --muted:#9aa8b5; --line:#2c3843; --soft:#202b35;
+  --accent:#6bb4d6; --accent-soft:#1d3746;
+  --s1:#6bb4d6; --s1-soft:#1d3746; --s2:#f0935f; --s2-soft:#3a2418; --s3:#6cc493; --s3-soft:#1b3326;
+  --pick:#6bb4d6; --warn:#f27b72; --warn-soft:#3d201d; --ok:#6cc493; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11171d; --paper:#18212a; --ink:#e6ecf1; --muted:#9aa8b5; --line:#2c3843; --soft:#202b35;
+  --accent:#6bb4d6; --accent-soft:#1d3746;
+  --s1:#6bb4d6; --s1-soft:#1d3746; --s2:#f0935f; --s2-soft:#3a2418; --s3:#6cc493; --s3-soft:#1b3326;
+  --pick:#6bb4d6; --warn:#f27b72; --warn-soft:#3d201d; --ok:#6cc493; color-scheme:dark}
+
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45}
+.wrap{max-width:1240px;margin:0 auto;padding-block:28px 110px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:clamp(1.6rem,3.4vw,2.3rem);font-weight:800;letter-spacing:-.01em}
+.eyebrow{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.lead{color:var(--muted);max-width:76ch;margin:.4rem 0 0}
+header{display:grid;gap:6px;margin-bottom:20px}
+
+.case{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:20px;display:grid;gap:12px}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.field{display:grid;gap:4px;min-width:0;align-content:start}
+.field label,.flabel{font-size:.8rem;font-weight:700;color:var(--muted);letter-spacing:.03em}
+.field small{color:var(--muted);font-size:.8rem}
+input[type=text],textarea,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;box-sizing:border-box}
+textarea{min-height:70px;resize:vertical}
+
+.evid{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:20px;display:grid;gap:12px}
+.evid h2{font-size:1.05rem}
+.evid .muted b{color:var(--ink)}
+.checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;align-items:start}
+.evcard{display:grid;gap:0;border:1px solid var(--line);border-radius:10px;background:var(--bg);align-content:start;overflow:hidden}
+.evcard:has(input:checked){border-color:var(--accent)}
+.evcard .chk{border:0;border-radius:0}
+.evcard details{border-top:1px solid var(--line);font-size:.9rem}
+.evcard summary{cursor:pointer;padding:9px 12px;font-weight:700;color:var(--accent);list-style-position:inside}
+.evcard summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.dbody{padding:0 12px 12px;display:grid;gap:8px}
+.dbody p,.dbody ul,.dbody ol{margin:0}
+.dbody ul,.dbody ol{padding-left:18px;display:grid;gap:4px}
+.evcard:has(details[open]){grid-column:1 / -1}
+.clear{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
+.cl{display:grid;grid-template-columns:38px minmax(0,1fr);gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:10px}
+.cl .L{font-family:var(--display);font-weight:800;font-size:1.6rem;line-height:1;color:var(--accent);text-align:center}
+.cl b{display:block}.cl p{margin:3px 0 0}
+.cl .q{color:var(--muted);font-size:.86rem}
+.cl .dv{font-size:.85rem;border-top:1px dashed var(--line);padding-top:5px;margin-top:6px}
+.cl .dv s{color:var(--muted)}
+.fw{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;margin:0}
+.fw dt{font-weight:700;color:var(--ink)}.fw dd{margin:0;min-width:0}
+.ex{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:.88rem}
+button.act.small{font-size:.82rem;padding:5px 10px;justify-self:start}
+@media (max-width:520px){.fw{grid-template-columns:1fr}.fw dd{margin-bottom:4px}}
+.chk{display:grid;grid-template-columns:24px 1fr;gap:8px;align-items:start;border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;background:var(--bg)}
+.chk input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--accent);cursor:pointer}
+.chk b{display:block}.chk small{color:var(--muted);font-size:.85rem}
+.chk:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.chk:focus-within{outline:2px solid var(--accent);outline-offset:1px}
+.evstate{font-weight:700;font-size:.9rem;margin:0}
+.evstate.bad{color:var(--warn)}.evstate.good{color:var(--ok)}.evstate.mid{color:var(--s2)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:22px;align-items:start}
+.rubric{background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}
+.thead,.crit{display:grid;grid-template-columns:minmax(190px,1.25fr) 78px repeat(3,minmax(0,1fr));align-items:stretch}
+.thead{background:var(--soft);font-size:.74rem;letter-spacing:.07em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+.thead div{padding:10px 12px}
+.saber{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 14px;background:var(--c-soft);color:var(--c);border-top:1px solid var(--line)}
+.saber h2{font-size:1.08rem}
+.saber .sub{font-family:var(--body);font-weight:700;font-size:.85rem;font-variant-numeric:tabular-nums}
+.saber .sub.low{color:var(--warn)}
+.crit{border-top:1px solid var(--line)}
+.crit > div{padding:11px 12px;min-width:0}
+.cname b{display:block;font-weight:700}
+.cname .obs{display:block;margin-top:4px;font-size:.88rem;color:var(--muted)}
+.cname .obs i{font-style:normal;font-weight:700;color:var(--c)}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.tag{font-size:.72rem;font-weight:700;border:1px solid var(--line);border-radius:5px;padding:0 5px;color:var(--muted);cursor:help}
+.wcell{display:flex;flex-direction:column;gap:3px;align-items:flex-start}
+.wcell input{font:inherit;font-weight:700;width:58px;padding:5px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font-variant-numeric:tabular-nums}
+.wcell span{font-size:.75rem;color:var(--muted)}
+.lvl{font:inherit;text-align:left;font-size:.9rem;background:transparent;border:0;border-left:1px solid var(--line);color:var(--ink);cursor:pointer;display:flex;flex-direction:column;gap:4px;transition:background .12s}
+.lvl:hover{background:var(--soft)}
+.lvl .lh{display:none;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.lvl[aria-checked="true"]{background:var(--c-soft);box-shadow:inset 0 0 0 2px var(--c);font-weight:600}
+.lvl[aria-checked="true"]::before{content:"✓ Seleccionado";font-size:.72rem;font-weight:700;color:var(--c);letter-spacing:.04em}
+.lvl:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+
+aside{position:sticky;top:calc(env(safe-area-inset-top, 0px) + 16px);display:grid;gap:14px}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:12px}
+.big{display:flex;align-items:baseline;gap:8px;font-variant-numeric:tabular-nums}
+.big strong{font-family:var(--display);font-size:3rem;font-weight:800;line-height:1}
+.big span{color:var(--muted)}
+.result{font-family:var(--display);font-weight:700;font-size:1.15rem}
+.muted{color:var(--muted);font-size:.88rem;margin:0}
+.bars{display:grid;gap:9px}
+.bar{display:grid;gap:3px;font-size:.85rem}
+.bar .top{display:flex;justify-content:space-between;font-variant-numeric:tabular-nums}
+.bar .top b{color:var(--c)}
+.track{height:8px;border-radius:4px;background:var(--soft);overflow:hidden}
+.track i{display:block;height:100%;width:0;background:var(--c);transition:width .25s}
+.alert{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:.9rem;font-weight:600}
+.total{font-size:.88rem;font-weight:700;font-variant-numeric:tabular-nums}
+.total.bad{color:var(--warn)}.total.good{color:var(--ok)}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+button.act{font:inherit;font-weight:600;font-size:.9rem;border-radius:8px;padding:7px 12px;cursor:pointer;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+button.act.primary{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+button.act:disabled{opacity:.5;cursor:default}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.status{font-size:.85rem;color:var(--accent);min-height:1.2em;margin:0}
+.scale{font-size:.88rem}
+.scale ol{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:5px}
+.scale li{display:grid;grid-template-columns:70px 1fr;gap:8px}
+.scale li.cur{font-weight:700;color:var(--accent)}
+
+.info{margin-top:26px;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px 18px;font-size:.93rem;min-width:0}
+.card h2{font-size:1.05rem;margin-bottom:8px}
+.card ul{margin:0;padding-left:18px;display:grid;gap:4px}
+.card dl{display:grid;grid-template-columns:minmax(120px,160px) minmax(0,1fr);gap:6px 12px;margin:0}
+.card dt{font-weight:700;color:var(--accent)}.card dd{margin:0;min-width:0}
+
+.mbar{display:none}
+@media (max-width:980px){
+  .layout{grid-template-columns:1fr}
+  aside{position:static}
+  .mbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--paper);border-top:4px solid var(--accent);
+    padding-block:10px calc(10px + env(safe-area-inset-bottom, 0px));
+    padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));
+    justify-content:space-between;align-items:center;gap:10px;font-variant-numeric:tabular-nums}
+  .mbar strong{font-family:var(--display);font-size:1.4rem}
+  .mbar span{font-weight:700;text-align:right}
+}
+@media (max-width:760px){
+  .thead{display:none}
+  .crit{grid-template-columns:1fr auto}
+  .cname{grid-column:1}.wcell{grid-column:2;align-items:flex-end}
+  .lvl{grid-column:1 / -1;border-left:0;border-top:1px solid var(--line)}
+  .lvl .lh{display:block}
+  .card dl{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Instrumento de evaluación · Licenciaturas en educación, Plan de Estudios 2022</div>
+    <h1>Rúbrica para evidencias elaboradas con apoyo de IA generativa</h1>
+    <p class="lead">Para cualquier licenciatura de las escuelas normales y los CAM (preescolar, primaria, especial, física, telesecundaria, inclusión educativa, enseñanza de asignaturas, entre otras), en actividades donde se permite usar IA como apoyo. Integra siempre los tres saberes y valora el proceso y la autoría, no solo el producto. Elija el tipo de actividad para cargar pesos y pistas de observación; después ajuste los pesos según su criterio y seleccione un nivel por criterio. Las siglas se definen <a href="#siglas" style="color:var(--accent)">al final de la página</a>.</p>
+  </header>
+
+  <section class="case" aria-label="Datos de la evaluación">
+    <div class="fields">
+      <div class="field"><label for="est">Estudiante</label><input type="text" id="est"></div>
+      <div class="field"><label for="lic">Licenciatura</label><select id="lic"></select><small><a href="https://dgesum.sep.gob.mx/planes2022" target="_blank" rel="noopener" style="color:var(--accent)">Consultar planes de estudio 2022</a></small></div>
+      <div class="field"><label for="act">Actividad o evidencia</label><input type="text" id="act"></div>
+      <div class="field"><label for="tipo">Tipo de actividad</label><select id="tipo"></select><small id="tipohint"></small></div>
+      <div class="field"><label for="etapa">Uso de IA permitido</label><select id="etapa"></select><small id="etapahint"></small></div>
+      <div class="field"><label for="herr">Herramientas declaradas</label><input type="text" id="herr"></div>
+      <div class="field"><label for="doc">Docente</label><input type="text" id="doc"></div>
+    </div>
+  </section>
+
+  <section class="evid" aria-labelledby="evh">
+    <h2 id="evh">Evidencias de la interacción con la IA</h2>
+    <p class="muted">Si la actividad permite usar IA, el estudiante debe entregar evidencia de cómo la usó. Marque lo que entregó. <b>No suma puntos</b>: es un requisito para evaluar con información suficiente los criterios H2, H4 y E1 (Manifiesto P2-9 y P2-10).</p>
+    <div class="checks">
+      <div class="evcard">
+        <label class="chk"><input type="checkbox" id="ev1"><span><b>Instrucciones (prompts) utilizadas</b><small>Texto o captura de los prompts que escribió, incluidas las iteraciones.</small></span></label>
+        <details>
+          <summary>Criterios CLEAR para diseñar y revisar prompts</summary>
+          <div class="dbody">
+            <p>El Manifiesto (P2-6) propone revisar cada instrucción con cinco criterios CLEAR (Lo, 2023). Pida al estudiante que entregue su prompt y que indique cómo cumple cada criterio. El Manifiesto sugiere además organizar el prompt en contexto, tarea y formato (P2-5).</p>
+            <div class="clear">
+              <div class="cl"><span class="L">C</span><div><b>Conciso</b><p>Expresa lo necesario sin información irrelevante.</p><p class="q">Revise: ¿cada frase aporta algo a la tarea?</p><p class="dv"><s>«Hola, oye, quería ver si me puedes ayudar con algo de mi práctica que no me salió muy bien…»</s><br>«Analiza la siguiente situación de mi práctica.»</p></div></div>
+              <div class="cl"><span class="L">L</span><div><b>Lógico</b><p>Organiza la solicitud de manera secuencial.</p><p class="q">Revise: ¿primero el contexto, luego la tarea y al final el formato?</p><p class="dv"><s>Pedir el formato antes de explicar la situación.</s><br>Contexto → tarea → formato, en ese orden.</p></div></div>
+              <div class="cl"><span class="L">E</span><div><b>Explícito</b><p>Señala con claridad lo que se requiere.</p><p class="q">Revise: ¿dice qué producto, cuántos elementos y con qué características?</p><p class="dv"><s>«Dame ideas para mi clase.»</s><br>«Propón tres actividades de 20 minutos para comparar fracciones en 4.º de primaria.»</p></div></div>
+              <div class="cl"><span class="L">A</span><div><b>Adaptativo</b><p>Ajusta la instrucción al propósito y al contexto.</p><p class="q">Revise: ¿incluye nivel, grado, características del grupo y recursos disponibles, sin datos personales?</p><p class="dv"><s>Pedir una actividad «para niños».</s><br>«Grupo de 28 estudiantes de 2.º de telesecundaria, sin internet en el aula y con dos estudiantes con baja visión.»</p></div></div>
+              <div class="cl"><span class="L">R</span><div><b>Reflexivo</b><p>Solicita análisis, valoración o revisión cuando es pertinente.</p><p class="q">Revise: ¿pide a la IA justificar, señalar límites o hacer preguntas, en lugar de solo producir?</p><p class="dv"><s>«Escribe mi reflexión de la jornada.»</s><br>«Hazme cinco preguntas que me ayuden a reflexionar sobre esta situación; no respondas por mí.»</p></div></div>
+            </div>
+            <p class="ex"><b>Ejemplo completo:</b> «Soy estudiante de 5.º semestre de la Licenciatura en Educación Primaria. En mi jornada de práctica en 3.º, un grupo de 30 estudiantes se dispersó durante la lectura en voz alta (contexto). Propón tres estrategias para mantener la atención y explica en qué supuesto pedagógico se basa cada una (tarea). Preséntalas en una tabla con estrategia, duración y riesgo posible, y al final hazme dos preguntas para valorar cuál conviene a mi grupo (formato y reflexión).»</p>
+            <p>Pida también las iteraciones: qué criterio CLEAR mejoró en cada nueva instrucción y por qué. El Manifiesto recuerda que un buen prompt no garantiza un buen resultado: toda respuesta debe revisarse.</p>
+          </div>
+        </details>
+      </div>
+      <div class="evcard">
+        <label class="chk"><input type="checkbox" id="ev2"><span><b>Interacción completa con la IA</b><small>Enlace compartido, exportación o capturas de la conversación.</small></span></label>
+        <details>
+          <summary>Cómo pedirla a los estudiantes</summary>
+          <div class="dbody">
+            <ul>
+              <li><b>Enlace compartido:</b> ChatGPT, Claude, Gemini y Copilot tienen una opción «Compartir» en la conversación que genera un enlace de solo lectura. Es la forma más completa.</li>
+              <li><b>Exportar o copiar:</b> copiar la conversación a un documento con fecha, o usar la opción de exportar de la herramienta.</li>
+              <li><b>Capturas de pantalla:</b> para herramientas de imagen, voz o video, o cuando no hay conexión estable. Deben mostrar la instrucción y el resultado.</li>
+            </ul>
+            <p><b>Acuerdos útiles:</b> una conversación por actividad; no borrarla hasta recibir la calificación; antes de compartir, revisar que no contenga nombres, fotos ni datos de alumnos de la escuela de práctica (Manifiesto VIII). Si un estudiante no tiene cuenta o conectividad, acepte capturas o una bitácora escrita (Manifiesto IX).</p>
+            <p class="ex" id="msgtxt">Mensaje sugerido: «Si usaste IA en esta actividad, entrega junto con tu producto la evidencia de la conversación: el enlace compartido (botón “Compartir” de la herramienta) o, si no es posible, capturas completas o la conversación copiada a un documento. Usa una sola conversación para la actividad y no la borres hasta tener tu calificación. Antes de compartir, verifica que no aparezcan nombres, fotos ni datos de alumnos.»</p>
+            <button class="act small" type="button" data-copy="msgtxt">Copiar mensaje</button>
+          </div>
+        </details>
+      </div>
+      <div class="evcard">
+        <label class="chk"><input type="checkbox" id="ev3"><span><b>Ficha técnica de uso de IA</b><small>Herramientas, propósito, aporte propio y modificaciones realizadas.</small></span></label>
+        <details>
+          <summary>Contenido mínimo de la ficha</summary>
+          <div class="dbody">
+            <ol class="ficha" id="fichatxt">
+              <li>Estudiante, actividad y fecha.</li>
+              <li>Herramienta(s) usada(s), versión o modelo, y si es gratuita o de pago.</li>
+              <li>Propósito pedagógico: para qué la usó (ideas, borrador, revisión de estilo, recursos…).</li>
+              <li>Partes del producto en las que intervino la IA.</li>
+              <li>Prompts clave revisados con los criterios CLEAR, o referencia a la conversación compartida.</li>
+              <li>Qué aceptó, qué descartó y qué modificó de lo generado, y por qué.</li>
+              <li>Cómo verificó la información: fuentes con las que la contrastó.</li>
+              <li>Cuidado de datos: confirmación de que no ingresó datos personales de alumnos ni de terceros.</li>
+              <li>Reflexión breve: qué aprendió del proceso y qué haría diferente.</li>
+              <li>Declaración de autoría: «Asumo la responsabilidad del contenido final».</li>
+            </ol>
+            <p>Los puntos 1, 3 y 6 coinciden con la ficha modelo de la guía (herramientas, propósito, aporte propio y modificaciones).</p>
+            <button class="act small" type="button" data-copy="fichatxt">Copiar formato de ficha</button>
+          </div>
+        </details>
+      </div>
+    </div>
+    <div class="fields">
+      <div class="field"><label for="evlink">Enlace o ubicación de la evidencia</label><input type="text" id="evlink"></div>
+    </div>
+    <p class="evstate" id="evstate" aria-live="polite"></p>
+  </section>
+
+  <div class="layout">
+    <div class="rubric" role="group" aria-label="Rúbrica">
+      <div class="thead"><div>Criterio · qué observar</div><div>Peso %</div><div>Sobresaliente (3)</div><div>Suficiente (2)</div><div>Insuficiente (1)</div></div>
+      <div id="rows"></div>
+    </div>
+
+    <aside>
+      <div class="panel">
+        <div class="eyebrow">Resultado</div>
+        <div class="big"><strong id="score">0</strong><span>de 100</span></div>
+        <div class="result" id="result"></div>
+        <p class="muted" id="eqv"></p>
+        <div class="bars" id="bars"></div>
+        <div class="alert" id="alert" hidden></div>
+        <p class="total" id="total"></p>
+        <div class="field"><label for="retro">Retroalimentación para el estudiante</label><textarea id="retro"></textarea></div>
+        <div class="btns">
+          <button class="act" id="ejemplo" type="button">Cargar ejemplo</button>
+          <button class="act" id="nueva" type="button">Nueva evaluación</button>
+          <button class="act" id="resetw" type="button">Pesos del tipo de actividad</button>
+        </div>
+        <div class="btns">
+          <button class="act primary" id="dlhtml" type="button" disabled>Descargar informe</button>
+          <button class="act" id="dlcsv" type="button" disabled>Descargar datos (CSV)</button>
+        </div>
+        <p class="status" id="dlstatus" aria-live="polite"></p>
+      </div>
+      <div class="panel scale">
+        <h3>Escala del resultado</h3>
+        <ol id="scale"></ol>
+        <p class="muted">Resultado = suma de (peso × nivel ÷ 3). Los criterios sin nivel no cuentan y el resultado se ajusta a los evaluados.</p>
+      </div>
+    </aside>
+  </div>
+
+  <div class="info">
+    <section class="card" aria-labelledby="fh">
+      <h2 id="fh">Fundamento</h2>
+      <ul>
+        <li><b>Manifiesto sobre el uso de la IAGen</b> en la comunidad normalista y los CAM de Veracruz (DEN-SEV, documento de trabajo). Cada criterio indica los principios (I–XV) y orientaciones de la Parte II (P2) con que se alinea; pase el cursor sobre la etiqueta para ver el nombre.</li>
+        <li><b>Guía rápida de uso ético y crítico de la IA</b> (Licenciatura en Educación Preescolar, Plan 2022): dominios Saber, Saber hacer y Saber ser y uso ético, y rúbrica integral para docentes. Aquí sus criterios se generalizan para todas las licenciaturas.</li>
+        <li><b>Planes de estudio 2022</b> de las licenciaturas para la formación de maestras y maestros de educación básica (SEP): <a href="https://dgesum.sep.gob.mx/planes2022" target="_blank" rel="noopener" style="color:var(--accent)">dgesum.sep.gob.mx/planes2022</a>. Consulte el perfil de egreso y los cursos de cada licenciatura al valorar el criterio S1.</li>
+        <li>El manifiesto pide valorar el aprendizaje y no decidir si un texto «parece» generado por IA (P2-12). Use esta rúbrica junto con la defensa oral del producto.</li>
+      </ul>
+    </section>
+    <section class="card" id="siglas" aria-labelledby="sh">
+      <h2 id="sh">Siglas</h2>
+      <dl>
+        <dt>IA</dt><dd>Inteligencia artificial.</dd>
+        <dt>IAGen</dt><dd>Inteligencia artificial generativa.</dd>
+        <dt>DEN</dt><dd>Dirección de Educación Normal.</dd>
+        <dt>SEV</dt><dd>Secretaría de Educación de Veracruz.</dd>
+        <dt>CAM</dt><dd>Centros de Actualización del Magisterio.</dd>
+        <dt>I–XV</dt><dd>Principios de la Parte I del Manifiesto.</dd>
+        <dt>P2-n</dt><dd>Orientación número n de la Parte II del Manifiesto («Orientaciones y propuestas prácticas para la implementación»).</dd>
+        <dt>PDA</dt><dd>Procesos de Desarrollo de Aprendizaje.</dd>
+        <dt>NEAE</dt><dd>Necesidades Específicas de Apoyo Educativo.</dd>
+        <dt>APA</dt><dd>Normas de citación de la American Psychological Association.</dd>
+        <dt>CLEAR</dt><dd>Criterios para formular instrucciones: Conciso, Lógico, Explícito, Adaptativo y Reflexivo (Manifiesto P2-6).</dd>
+        <dt>CSV</dt><dd>Valores separados por comas; archivo de datos que se abre en Excel.</dd>
+        <dt>IIIA</dt><dd>Instituto de Investigaciones en Inteligencia Artificial, Universidad Veracruzana.</dd>
+      </dl>
+    </section>
+    <section class="card" aria-labelledby="dh">
+      <h2 id="dh">Declaración de uso de IA</h2>
+      <dl>
+        <dt>Herramienta</dt><dd>Claude (Anthropic), modelo Claude Opus 5.5, octubre de 2026.</dd>
+        <dt>Responsable</dt><dd>Nancy Pérez-Castro, IIIA, Universidad Veracruzana.</dd>
+        <dt>Aporte humano</dt><dd>Propósito, documentos base (guía y manifiesto) y requisitos: rúbrica sintetizada, ponderable, adaptable a actividades e integrada por los tres saberes.</dd>
+        <dt>Aporte de la IA</dt><dd>Síntesis de criterios y descriptores, alineación con los principios, pesos sugeridos por actividad y programación de la página.</dd>
+        <dt>Revisión</dt><dd>Los descriptores y pesos son una propuesta inicial; deben revisarse en colegiado y validarse con evidencias reales.</dd>
+      </dl>
+    </section>
+  </div>
+</div>
+
+<div class="mbar" aria-live="polite"><strong id="mscore">0</strong><span id="mres"></span></div>
+
+<script>
+const P={I:"I. La educación tiene una finalidad humana",II:"II. El juicio humano es irrenunciable",III:"III. La autoría humana debe preservarse",IV:"IV. La transparencia es una condición de integridad",V:"V. El pensamiento crítico debe preceder a la aceptación",VI:"VI. La evaluación debe valorar el aprendizaje y no únicamente el producto",VII:"VII. La integridad académica exige responsabilidad",VIII:"VIII. La privacidad y la protección de datos son irrenunciables",IX:"IX. La equidad debe orientar el acceso tecnológico",X:"X. La inclusión debe conservar su dimensión humana y contextual",XI:"XI. La autonomía pedagógica y cultural debe preservarse",XIV:"XIV. La sostenibilidad también forma parte de la responsabilidad",XV:"XV. La innovación debe estar subordinada al bien educativo",
+ "P2-4":"Parte II, 4. Uso de la IAGen como apoyo al diseño didáctico","P2-8":"Parte II, 8. Validación de resultados: generación → revisión → contraste → contextualización → reelaboración → validación","P2-9":"Parte II, 9. Declaración del uso de la IAGen","P2-10":"Parte II, 10. Evidencias del proceso de elaboración","P2-11":"Parte II, 11. Evaluación formativa, dialógica y situada","P2-12":"Parte II, 12. Rúbricas e indicadores de autoría y proceso","P2-13":"Parte II, 13. Producciones que requieren especial protección de la autoría"};
+const SABERES=[
+ {id:"s1",name:"Saber",sub:"Conceptual",c:"s1",crit:[
+  {id:"S1",t:"Apropiación conceptual y relación teoría-práctica",tags:["VI","P2-12"],
+   d:["Domina los conceptos y enfoques del plan de estudios de su licenciatura y los relaciona con su práctica y con autores.","Menciona conceptos y autores, pero los integra poco con su práctica.","Confunde conceptos clave o los presenta sin relación con la práctica."]},
+  {id:"S2",t:"Sustento y verificación de la información",tags:["V","VII","P2-8"],
+   d:["Contrasta lo generado con fuentes verificables y corrige errores u omisiones de la IA.","Cita fuentes, pero no comprueba su existencia ni su exactitud.","Incluye datos falsos o referencias inexistentes sin comprobarlos."]}]},
+ {id:"s2",name:"Saber hacer",sub:"Procedimental",c:"s2",crit:[
+  {id:"H1",t:"Contextualización situada",tags:["X","XI","P2-4"],
+   d:["Ajusta la propuesta al diagnóstico, la edad, la diversidad y los saberes de la comunidad.","Hace ajustes generales con poca relación con el grupo real.","Presenta contenido genérico, desconectado del contexto o inviable."]},
+  {id:"H2",t:"Curaduría y reelaboración crítica de lo generado",tags:["II","V","P2-8"],
+   d:["Selecciona, descarta y transforma lo que propuso la IA; sus decisiones mejoran el producto.","Acepta la mayoría de las sugerencias con adaptaciones menores.","Copia las respuestas de la IA de forma literal, con errores o desalineaciones."]},
+  {id:"H3",t:"Calidad del producto según la actividad",tags:["XV"],
+   d:["Cumple con solvencia los requisitos técnicos y comunicativos de la actividad.","Es funcional, con fallas menores de estructura, edición o claridad.","Está desorganizado, incompleto o es difícil de comprender."]},
+  {id:"H4",t:"Proceso documentado y explicación de decisiones",tags:["VI","P2-10","P2-11"],
+   d:["Muestra borradores o bitácora de instrucciones y explica con claridad sus decisiones.","Muestra parte del proceso o lo explica de forma general.","No muestra el proceso ni puede explicar cómo construyó el producto."]}]},
+ {id:"s3",name:"Saber ser y uso ético",sub:"Actitudinal",c:"s3",crit:[
+  {id:"E1",t:"Transparencia en el uso de la IA",tags:["IV","P2-9"],
+   d:["Declara herramientas, propósito, instrucciones clave y qué modificó.","Declara el uso de forma vaga o incompleta.","No declara un uso de IA que resulta evidente."]},
+  {id:"E2",t:"Autoría y voz pedagógica propia",tags:["III","I","P2-13"],
+   d:["Su vivencia, postura e identidad profesional son claras; la IA solo apoya.","Su voz aparece fragmentada o eclipsada por un estilo impersonal.","El producto sustituye su reflexión; no hay vínculo con su práctica real."]},
+  {id:"E3",t:"Cuidado de datos, derechos y uso responsable",tags:["VIII","IX","XIV"],
+   d:["Protege datos e imágenes de niñas, niños y adolescentes, acredita autorías y usa la IA solo donde aporta.","Omite alguna acreditación o hace un uso poco justificado de la IA.","Expone datos personales o usa material ajeno sin autorización."]}]}
+];
+const CRIT=SABERES.flatMap(s=>s.crit.map(c=>({...c,s})));
+const LEV=["","Insuficiente","Suficiente","Sobresaliente"];
+// Pesos [S1,S2,H1,H2,H3,H4,E1,E2,E3] y pistas de observación por tipo de actividad
+const TIPOS=[
+ {id:"gen",n:"General (cualquier evidencia)",h:"Saber 30 · Hacer 40 · Ser 30",w:[15,15,10,12,10,8,10,12,8],
+  o:["Conceptos del curso y su vínculo con la práctica","Referencias reales y datos comprobables","Datos del grupo, edad y comunidad","Qué tomó, qué descartó y qué cambió de la IA","Requisitos de la actividad","Borradores, bitácora o versiones","Ficha de declaración de uso de IA","Primera persona, postura y vivencias propias","Datos de menores, créditos y uso proporcionado"]},
+ {id:"nar",n:"Narrativa, diario o ensayo reflexivo",h:"Producción con protección especial de la autoría (P2-13)",w:[15,10,12,8,8,7,10,22,8],
+  o:["Autores que sostienen la reflexión","Citas reales y formato APA correcto","Situaciones del aula con fecha y detalle","Preguntas detonadoras que la IA le ayudó a formular","Coherencia narrativa y redacción","Diario de campo como fuente de la narrativa","Qué partes revisó o apoyó la IA","Introspección auténtica: errores, dudas, emociones","Anonimato de estudiantes de educación básica y sus familias"]},
+ {id:"pla",n:"Planeación, proyecto o secuencia",h:"Peso mayor en contextualización y curaduría",w:[15,10,20,15,8,7,10,7,8],
+  o:["Campos formativos, ejes articuladores y PDA pertinentes","PDA y contenidos que existen en el programa oficial","Vínculo con el diagnóstico y ajustes razonables (NEAE)","Actividades inviables descartadas o adaptadas","Secuencia, tiempos, recursos y evaluación","Versiones previas de la planeación","Herramientas y propósito declarados","Justificación pedagógica propia","Recursos disponibles en la escuela y la comunidad"]},
+ {id:"dig",n:"Recurso digital o audiovisual",h:"Podcast, video, infografía o sitio web",w:[12,13,10,10,18,7,10,8,12],
+  o:["Rigor del contenido presentado","Datos verificados; créditos de imágenes y música","Lenguaje y ejemplos adecuados al público","Guion propio y edición con criterio","Audio, imagen, diseño y navegación","Guion, storyboard o archivos editables","Qué herramientas generaron voz, imagen o texto","Voz y presencia propias; originalidad","Sin rostros ni datos de menores sin autorización"]},
+ {id:"por",n:"Portafolio de evidencias",h:"Peso mayor en proceso y autoría",w:[15,10,8,8,9,15,10,15,10],
+  o:["Vínculo con el perfil de egreso de su licenciatura","Referencias de las evidencias integradas","Evidencias de su propia práctica","Selección argumentada de evidencias","Organización y navegación lógica","Ciclo reflexivo documentado (Smith o Gibbs)","Declaración en cada evidencia","Autoevaluación honesta","Privacidad en fotos y documentos de práctica"]}
+];
+const ETAPAS=[
+ ["ini","Etapa inicial","Explorar información, comprender conceptos, generar ideas y organizar recursos."],
+ ["int","Etapa intermedia","Borradores, estructura de textos, revisión de estilo y alternativas de diseño didáctico."],
+ ["ava","Etapa avanzada","Crear y revisar recursos, preguntas orientadoras, simulaciones y retroalimentación."]
+];
+const LEVELS=[[90,"Sobresaliente"],[75,"Satisfactorio"],[60,"Suficiente"],[0,"Requiere acompañamiento"]];
+const MIN_SABER=15;
+const LICS=["Educación Inicial","Educación Preescolar","Educación Preescolar Intercultural, Plurilingüe y Comunitaria","Educación Primaria","Educación Primaria Intercultural, Plurilingüe y Comunitaria","Inclusión Educativa","Educación Especial","Educación Física","Enseñanza y Aprendizaje en Telesecundaria","Enseñanza y Aprendizaje del Español","Enseñanza y Aprendizaje de las Matemáticas","Enseñanza y Aprendizaje de la Biología","Enseñanza y Aprendizaje de la Física","Enseñanza y Aprendizaje de la Química","Enseñanza y Aprendizaje de la Geografía","Enseñanza y Aprendizaje de la Historia","Enseñanza y Aprendizaje de la Formación Ética y Ciudadana","Enseñanza y Aprendizaje del Inglés"].map(x=>"Licenciatura en "+x).concat(["Otra (posgrado, actualización o CAM)"]);
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let tipo="gen", weights=[...TIPOS[0].w], levels=CRIT.map(()=>0);
+const EVS=[["ev1","Instrucciones (prompts) utilizadas"],["ev2","Interacción completa con la IA"],["ev3","Ficha técnica de uso de IA"]];
+const evGot=()=>EVS.filter(e=>$(e[0]).checked);
+
+$("lic").innerHTML=`<option value="">Seleccione…</option>`+LICS.map(l=>`<option>${l}</option>`).join("");
+$("tipo").innerHTML=TIPOS.map(t=>`<option value="${t.id}">${t.n}</option>`).join("");
+$("etapa").innerHTML=ETAPAS.map(e=>`<option value="${e[0]}">${e[1]}</option>`).join("");
+$("scale").innerHTML=LEVELS.map((l,k)=>`<li id="sc${k}"><b>${k===0?"90–100":k===3?"0–59":l[0]+"–"+(LEVELS[k-1][0]-1)}</b><span>${l[1]}</span></li>`).join("");
+
+const rowsEl=$("rows"); const R=[];
+SABERES.forEach(s=>{
+  const h=document.createElement("div");h.className="saber";h.style.cssText=`--c:var(--${s.c});--c-soft:var(--${s.c}-soft)`;
+  h.innerHTML=`<h2>${s.name} <span style="font-family:var(--body);font-weight:600;font-size:.85rem">· ${s.sub}</span></h2><span class="sub" id="sub-${s.id}"></span>`;
+  rowsEl.appendChild(h);
+  s.crit.forEach(c=>{
+    const k=CRIT.findIndex(x=>x.id===c.id);
+    const r=document.createElement("div");r.className="crit";r.style.cssText=`--c:var(--${s.c});--c-soft:var(--${s.c}-soft)`;
+    r.innerHTML=`<div class="cname"><b>${c.id}. ${c.t}</b><span class="obs"><i>Observe:</i> <span id="obs${k}"></span></span>
+      <span class="tags">${c.tags.map(t=>`<span class="tag" title="${esc(P[t])}">${t}</span>`).join("")}</span></div>
+      <div class="wcell"><input type="number" min="0" max="50" step="1" id="w${k}" aria-label="Peso de ${esc(c.t)} en por ciento"><span id="wp${k}"></span></div>
+      ${[3,2,1].map(v=>`<button type="button" class="lvl" role="radio" aria-checked="false" data-v="${v}" aria-label="${LEV[v]}: ${esc(c.d[3-v])}"><span class="lh">${LEV[v]} (${v})</span>${c.d[3-v]}</button>`).join("")}`;
+    rowsEl.appendChild(r);
+    const btns=[...r.querySelectorAll(".lvl")];
+    btns.forEach(b=>b.addEventListener("click",()=>{const v=+b.dataset.v;levels[k]=levels[k]===v?0:v;render();save()}));
+    $("w"+k).addEventListener("input",e=>{const v=Math.max(0,Math.min(50,Math.round(+e.target.value||0)));weights[k]=v;render(false);save()});
+    R[k]={btns};
+  });
+});
+
+function compute(){
+  let num=0,den=0;const sub={};
+  SABERES.forEach(s=>sub[s.id]={w:0,num:0,den:0});
+  CRIT.forEach((c,k)=>{const w=weights[k];sub[c.s.id].w+=w;
+    if(levels[k]){num+=w*levels[k]/3;den+=w;sub[c.s.id].num+=w*levels[k]/3;sub[c.s.id].den+=w}});
+  const score=den?Math.round(num/den*1000)/10:0;
+  const total=weights.reduce((a,b)=>a+b,0);
+  const L=LEVELS.find(l=>score>=l[0]);
+  const ev=levels.filter(Boolean).length;
+  return {score,total,sub,L,ev};
+}
+function render(syncInputs=true){
+  const T=TIPOS.find(t=>t.id===tipo);
+  const custom=weights.some((w,k)=>w!==T.w[k]);
+  $("tipo").value=tipo;$("tipohint").textContent=T.h+(custom?" · pesos personalizados":"");
+  $("etapahint").textContent=ETAPAS.find(e=>e[0]===$("etapa").value)[2];
+  CRIT.forEach((c,k)=>{
+    $("obs"+k).textContent=T.o[k];
+    if(syncInputs||document.activeElement!==$("w"+k))$("w"+k).value=weights[k];
+    $("wp"+k).textContent=weights[k]!==T.w[k]?`sug. ${T.w[k]}`:"sugerido";
+    R[k].btns.forEach(b=>b.setAttribute("aria-checked",String(+b.dataset.v===levels[k])));
+  });
+  const {score,total,sub,L,ev}=compute();
+  SABERES.forEach(s=>{const e=$("sub-"+s.id);e.textContent=`${sub[s.id].w} % del total`;e.classList.toggle("low",sub[s.id].w<MIN_SABER)});
+  $("score").textContent=ev?score:"–";
+  $("result").textContent=ev?L[1]:"Sin criterios evaluados";
+  $("eqv").textContent=ev?`Equivale a ${(score/10).toFixed(1)} en escala de 0 a 10 · ${ev} de ${CRIT.length} criterios evaluados`:"Seleccione un nivel en cada criterio.";
+  $("bars").innerHTML=SABERES.map(s=>{const d=sub[s.id];const p=d.den?Math.round(d.num/d.den*100):0;
+    return `<div class="bar" style="--c:var(--${s.c})"><div class="top"><b>${s.name}</b><span>${d.den?p+" % de logro":"sin evaluar"}</span></div><div class="track"><i style="width:${p}%"></i></div></div>`}).join("");
+  const t=$("total");const lowS=SABERES.filter(s=>sub[s.id].w<MIN_SABER).map(s=>s.name);
+  t.textContent=`Suma de pesos: ${total} %`+(total!==100?" · ajuste a 100 %":"")+(lowS.length?` · ${lowS.join(", ")} con menos de ${MIN_SABER} %`:"");
+  t.className="total "+(total===100&&!lowS.length?"good":"bad");
+  const iE1=CRIT.findIndex(c=>c.id==="E1"),iE2=CRIT.findIndex(c=>c.id==="E2"),iS2=CRIT.findIndex(c=>c.id==="S2");
+  const al=[];
+  if(levels[iE1]===1)al.push("transparencia");if(levels[iE2]===1)al.push("autoría");if(levels[iS2]===1)al.push("verificación de fuentes");
+  const g=evGot().length, es=$("evstate");
+  es.textContent=g===3?"Evidencia completa: 3 de 3 elementos entregados.":g?`Evidencia parcial: ${g} de 3 elementos entregados.`:"Sin evidencia de la interacción con la IA.";
+  es.className="evstate "+(g===3?"good":g?"mid":"bad");
+  const msgs=[];
+  if(al.length)msgs.push(`Alerta formativa en ${al.join(", ")}: dialogue con el estudiante y solicite evidencias del proceso antes de asentar la calificación (Manifiesto VI y VII).`);
+  if(!g)msgs.push("No se entregó evidencia de la interacción con la IA: solicítela antes de valorar H2, H4 y E1 (P2-9, P2-10).");
+  const A=$("alert");A.hidden=!msgs.length;A.textContent=msgs.join(" ");
+  LEVELS.forEach((_,k)=>$("sc"+k).classList.toggle("cur",ev&&LEVELS[k]===L));
+  $("mscore").textContent=ev?score+" / 100":"–";$("mres").textContent=ev?L[1]:"";
+}
+const FIELDS=["est","act","herr","doc","retro","etapa","lic"];
+function save(){try{localStorage.setItem("rubricaIA1",JSON.stringify({tipo,weights,levels,f:FIELDS.map(f=>$(f).value),ev:EVS.map(e=>$(e[0]).checked),evlink:$("evlink").value}))}catch(e){}}
+function load(s){tipo=TIPOS.some(t=>t.id===s.tipo)?s.tipo:"gen";const T=TIPOS.find(t=>t.id===tipo);
+  weights=(s.weights&&s.weights.length===CRIT.length)?s.weights.map(Number):[...T.w];
+  levels=(s.levels&&s.levels.length===CRIT.length)?s.levels.map(Number):CRIT.map(()=>0);
+  FIELDS.forEach((f,k)=>{const v=(s.f||[])[k];$(f).value=v!=null&&v!==""?v:(f==="etapa"?"int":"")});
+  EVS.forEach((e,k)=>$(e[0]).checked=!!(s.ev||[])[k]);$("evlink").value=s.evlink||"";render()}
+const EXAMPLE={tipo:"pla",weights:TIPOS[2].w,levels:[3,2,3,2,3,2,3,2,3],
+  f:["Ejemplo: estudiante de 5.º semestre","Planeación de una secuencia sobre noción de número","ChatGPT (ideas iniciales), Canva (material)","","Contextualizaste bien la secuencia con tu diagnóstico. Revisa la vigencia de dos referencias y explica por escrito por qué conservaste la tercera actividad que sugirió la IA.","int","Licenciatura en Educación Preescolar"],ev:[true,false,true],evlink:"Anexo 2 del documento entregado"};
+$("tipo").addEventListener("change",e=>{tipo=e.target.value;weights=[...TIPOS.find(t=>t.id===tipo).w];render();save()});
+$("etapa").addEventListener("change",()=>{render();save()});
+$("lic").addEventListener("change",save);
+EVS.forEach(e=>$(e[0]).addEventListener("change",()=>{render();save()}));
+$("evlink").addEventListener("input",save);
+["est","act","herr","doc","retro"].forEach(f=>$(f).addEventListener("input",save));
+$("resetw").onclick=()=>{weights=[...TIPOS.find(t=>t.id===tipo).w];render();save()};
+$("nueva").onclick=()=>{levels=CRIT.map(()=>0);["est","act","herr","retro","evlink"].forEach(f=>$(f).value="");EVS.forEach(e=>$(e[0]).checked=false);render();save()};
+$("ejemplo").onclick=()=>{load(EXAMPLE);save()};
+let saved=null;try{saved=JSON.parse(localStorage.getItem("rubricaIA1"))}catch(e){}
+load(saved||EXAMPLE);
+
+document.querySelectorAll("[data-copy]").forEach(b=>b.addEventListener("click",()=>{
+  const el=$(b.dataset.copy);
+  const txt=el.tagName==="OL"?[...el.children].map((li,i)=>`${i+1}. ${li.textContent}`).join("\n"):el.textContent.replace(/^Mensaje sugerido:\s*/,"").replace(/^«|»$/g,"");
+  const done=()=>{const o=b.textContent;b.textContent="Copiado";setTimeout(()=>b.textContent=o,1500)};
+  const fallback=()=>{const r=document.createRange();r.selectNodeContents(el);const sel=getSelection();sel.removeAllRanges();sel.addRange(r);b.textContent="Texto seleccionado: copie con Ctrl+C"};
+  try{navigator.clipboard.writeText(txt).then(done,fallback)}catch(e){fallback()}
+}));
+/* ---------- Informe descargable ---------- */
+const val=id=>$(id).value.trim();
+const today=()=>new Date().toLocaleDateString("es-MX",{year:"numeric",month:"long",day:"numeric"});
+const slug=s=>(s||"evaluacion").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^\w]+/g,"-").replace(/^-|-$/g,"").slice(0,40)||"evaluacion";
+function reportHTML(){
+  const {score,total,sub,L,ev}=compute();const T=TIPOS.find(t=>t.id===tipo);const E=ETAPAS.find(e=>e[0]===val("etapa"));
+  const col={s1:"#155a7a",s2:"#b4552a",s3:"#2f7d4f"};
+  let rows="";
+  SABERES.forEach(s=>{const d=sub[s.id];const p=d.den?Math.round(d.num/d.den*100)+" % de logro":"sin evaluar";
+    rows+=`<tr class="sb"><td colspan="5" style="color:${col[s.c]}">${s.name} · ${s.sub} — peso ${d.w} % · ${p}</td></tr>`;
+    s.crit.forEach(c=>{const k=CRIT.findIndex(x=>x.id===c.id);const lv=levels[k];
+      rows+=`<tr><td><b>${c.id}. ${esc(c.t)}</b><br><small>Principios: ${c.tags.join(", ")}</small></td><td class="c">${weights[k]} %${weights[k]!==T.w[k]?`<br><small>sug. ${T.w[k]}</small>`:""}</td><td class="c"><b>${lv?LEV[lv]:"—"}</b></td><td>${lv?esc(c.d[3-lv]):"<small>No evaluado</small>"}</td><td class="c">${lv?(weights[k]*lv/3).toFixed(1):""}</td></tr>`})});
+  const al=$("alert").hidden?"":`<p class="al">${esc($("alert").textContent)}</p>`;
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rúbrica IA · ${esc(val("est")||"Evaluación")}</title>
+<style>body{font-family:"Segoe UI",system-ui,sans-serif;color:#18232e;max-width:920px;margin:32px auto;padding:0 20px;line-height:1.45}
+h1{font-size:1.45rem;margin:0 0 6px}h2{font-size:1.08rem;margin:26px 0 8px}.meta{color:#5b6875;margin:0 0 16px}
+.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;border:1px solid #d9dfe5;border-top:6px solid #155a7a;border-radius:10px;padding:16px}
+.sum b{display:block;font-size:.74rem;text-transform:uppercase;letter-spacing:.06em;color:#5b6875}.sum span{font-size:1.1rem;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{border-bottom:1px solid #e3e7eb;padding:7px 8px;text-align:left;vertical-align:top}
+th{background:#eaeef2;font-size:.76rem;text-transform:uppercase;letter-spacing:.05em}.sb td{background:#f3f5f7;font-weight:700}.c{text-align:center}small{color:#5b6875}
+.ev{list-style:none;padding:0;margin:0}.ev li{padding:2px 0}.al{background:#f7e0dd;color:#a8322c;padding:10px 12px;border-radius:8px;font-weight:600}.note{white-space:pre-wrap;border:1px solid #d9dfe5;border-radius:8px;padding:10px;background:#f6f8fa}
+.foot{color:#5b6875;font-size:.84rem;margin-top:24px}@media print{body{margin:0}tr{break-inside:avoid}}</style></head><body>
+<h1>Rúbrica para evidencias elaboradas con apoyo de IA generativa</h1>
+<p class="meta">Estudiante: <b>${esc(val("est")||"—")}</b> · ${esc(val("lic")||"Licenciatura no indicada")} · Actividad: ${esc(val("act")||"—")} · Tipo: ${esc(T.n)} · Uso de IA permitido: ${esc(E[1])} · Herramientas declaradas: ${esc(val("herr")||"—")} · Docente: ${esc(val("doc")||"—")} · Fecha: ${today()}</p>
+<div class="sum"><div><b>Resultado</b><span>${ev?score+" / 100":"—"}</span></div><div><b>Nivel</b><span>${ev?L[1]:"—"}</span></div><div><b>Escala 0–10</b><span>${ev?(score/10).toFixed(1):"—"}</span></div><div><b>Criterios evaluados</b><span>${ev} de ${CRIT.length}</span></div></div>
+<h2>Evidencias de la interacción con la IA</h2>
+<ul class="ev">${EVS.map(e=>`<li>${$(e[0]).checked?"☑":"☐"} ${e[1]}</li>`).join("")}</ul>
+${val("evlink")?`<p><small>Ubicación: ${esc(val("evlink"))}</small></p>`:""}
+${al}
+${val("retro")?`<h2>Retroalimentación</h2><div class="note">${esc(val("retro"))}</div>`:""}
+<h2>Rúbrica</h2>
+<table><thead><tr><th>Criterio</th><th class="c">Peso</th><th class="c">Nivel</th><th>Descriptor alcanzado</th><th class="c">Puntos</th></tr></thead><tbody>${rows}</tbody></table>
+<p><small>Suma de pesos: ${total} %. Resultado = suma de (peso × nivel ÷ 3), ajustado a los criterios evaluados. Escala: 90–100 sobresaliente · 75–89 satisfactorio · 60–74 suficiente · 0–59 requiere acompañamiento.</small></p>
+<p class="foot">Fundamento: Manifiesto sobre el uso de la IAGen en la comunidad normalista y los CAM de Veracruz (DEN-SEV, documento de trabajo) Guía rápida de uso ético y crítico de la IA (Licenciatura en Educación Preescolar, Plan 2022), generalizada para todas las licenciaturas, y Planes de estudio 2022 (SEP), https://dgesum.sep.gob.mx/planes2022. Declaración de uso de IA del instrumento: criterios, descriptores, pesos y página elaborados con apoyo de Claude (Anthropic, Claude Opus 5.5, octubre de 2026), bajo la dirección y revisión de Nancy Pérez-Castro (IIIA, Universidad Veracruzana). Propuesta inicial sujeta a validación colegiada.</p>
+<p class="foot"><b>Siglas:</b> IA, inteligencia artificial · IAGen, inteligencia artificial generativa · DEN, Dirección de Educación Normal · SEV, Secretaría de Educación de Veracruz · CAM, Centros de Actualización del Magisterio · I–XV, principios de la Parte I del Manifiesto · P2-n, orientación n de la Parte II del Manifiesto · PDA, Procesos de Desarrollo de Aprendizaje · NEAE, Necesidades Específicas de Apoyo Educativo · APA, American Psychological Association · IIIA, Instituto de Investigaciones en Inteligencia Artificial.</p>
+</body></html>`;
+}
+function reportCSV(){
+  const {score,L,ev}=compute();const T=TIPOS.find(t=>t.id===tipo);const q=v=>`"${String(v).replace(/"/g,'""')}"`;
+  const head=[["Estudiante",val("est")],["Licenciatura",val("lic")],["Actividad",val("act")],["Tipo de actividad",T.n],["Uso de IA permitido",ETAPAS.find(e=>e[0]===val("etapa"))[1]],["Herramientas declaradas",val("herr")],["Docente",val("doc")],["Fecha",today()],["Resultado",ev?score:""],["Nivel",ev?L[1]:""],["Prompts entregados",$("ev1").checked?"Sí":"No"],["Interacción completa entregada",$("ev2").checked?"Sí":"No"],["Ficha técnica entregada",$("ev3").checked?"Sí":"No"],["Ubicación de la evidencia",val("evlink")],["Retroalimentación",val("retro")],[]];
+  const cols=["Saber","Criterio","Principios","Peso usado %","Peso sugerido %","Nivel","Valor (1-3)","Descriptor","Puntos"];
+  const lines=CRIT.map((c,k)=>{const lv=levels[k];return [c.s.name,c.id+". "+c.t,c.tags.join(" "),weights[k],T.w[k],lv?LEV[lv]:"",lv||"",lv?c.d[3-lv]:"",lv?(weights[k]*lv/3).toFixed(1):""]});
+  return "﻿"+[...head,cols,...lines].map(r=>r.map(q).join(",")).join("\r\n");
+}
+const st=$("dlstatus"),bH=$("dlhtml"),bC=$("dlcsv");
+function browserSave(filename,data){
+  const url=URL.createObjectURL(new Blob([data],{type:filename.endsWith(".csv")?"text/csv;charset=utf-8":"text/html;charset=utf-8"}));
+  const a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);st.textContent="Archivo descargado.";
+}
+async function capSave(dl,filename,data){
+  st.textContent="";
+  try{await dl.save({filename,data});st.textContent="Archivo guardado."}
+  catch(e){const c=e&&e.code;st.textContent=c==="declined"?"Descarga cancelada.":c==="rate_limited"?"Ya hay una descarga pendiente; espere un momento.":"La descarga no está disponible en esta vista."}
+}
+(async()=>{
+  let dl=null;
+  if(window.claude&&window.claude.use){try{dl=await window.claude.use("downloads")}catch(e){}}
+  const saveF=dl?(f,d)=>capSave(dl,f,d):browserSave;
+  bH.disabled=false;bC.disabled=false;
+  const base=()=>"rubrica-IA_"+slug(val("est"))+"_"+new Date().toISOString().slice(0,10);
+  bH.onclick=()=>saveF(base()+".html",reportHTML());
+  bC.onclick=()=>saveF(base()+".csv",reportCSV());
+})();
+</script>
+
+</body>
+</html>
